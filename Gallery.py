@@ -5,9 +5,8 @@
 '''
 import os
 import mimetypes
-from json import dumps as stringify
 import cherrypy
-
+from urllib import parse as urllib
 import Utils
 
 mimetypes.init()
@@ -21,10 +20,11 @@ class Gallery(object):
         self.prefix = path
 
     @cherrypy.expose
-    def list(self, *args, **kwargs):
+    @Utils.jsonify
+    def listdir(self, *args, **kwargs):
         '''Get Directory Listing for Gallery'''
         Utils.allow_methods(kwargs=kwargs)
-        path = '/'.join(args)
+        path = Utils.urlpatherize(args)
         if not os.path.isdir(self.prefix + path):
             raise cherrypy.HTTPError(404, 'Requested Directory Not Exists')
         retval = {
@@ -32,6 +32,8 @@ class Gallery(object):
             'files': []
         }
         base = self.prefix + path
+        if path:
+            path = '/' + path
         for item in Utils.sort_list(os.listdir(base), lambda x: x.lower()):
             safepath = path + '/' + item
             filename = base + '/' + item
@@ -41,13 +43,13 @@ class Gallery(object):
                 types = mimetypes.guess_type(filename)
                 if types[0] and types[0].startswith('image/'):
                     retval['files'].append(safepath)
-        return stringify(retval, indent=2)
+        return retval
 
     @cherrypy.expose
     def image(self, * args, **kwargs):
         '''Get Image From The Gallery'''
         Utils.allow_methods(kwargs=kwargs)
-        path = '/'.join(args)
+        path = Utils.urlpatherize(args)
         filename = self.prefix + path
         if not os.path.isfile(filename):
             raise cherrypy.HTTPError(404, 'File Not Found')

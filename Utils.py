@@ -9,6 +9,12 @@ from json import dumps
 
 mimetypes.init()
 
+def urlpatherize(parts):
+    '''Join the path and correct cherrypy's faulty latin1 encoding'''
+    path = '/'.join(parts)
+    path = path.encode('latin1').decode('utf8')
+    return path
+
 def jsonify(func):
     '''Decorator that JSON stringify method results'''
     def __inner(*args, **kwargs):
